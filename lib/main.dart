@@ -24,6 +24,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       title: 'Flutter App',
       theme: ThemeData(
           primarySwatch: Colors.purple,
@@ -63,7 +64,7 @@ class _MyHomePageState extends State<MyHomePage> {
   List<Transaction> get _recentTransactions {
     return _userTransaction.where((tx) {
       return tx.date.isAfter(
-        DateTime.now().subtract(Duration(days: 7)),
+        DateTime.now().subtract(const Duration(days: 7)),
       );
     }).toList();
   }
@@ -97,11 +98,54 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final PreferredSizeWidget appBar = Platform.isIOS
+  List<Widget> _buildLandscape(
+      MediaQueryData mediaQuery, AppBar appBar, Widget txList) {
+    return [
+      Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            'Show Chart',
+            style: Theme.of(context).textTheme.headline6,
+          ),
+          Switch.adaptive(
+              activeColor: Theme.of(context).accentColor,
+              value: _switchState,
+              onChanged: (value) {
+                setState(() {
+                  _switchState = value;
+                });
+              })
+        ],
+      ),
+      _switchState
+          ? SizedBox(
+              height: (mediaQuery.size.height -
+                      appBar.preferredSize.height -
+                      mediaQuery.padding.top) *
+                  0.7,
+              child: Chart(_recentTransactions))
+          : txList
+    ];
+  }
+
+  List<Widget> _buildPorttrait(
+      MediaQueryData mediaQuery, AppBar appBar, Widget txList) {
+    return [
+      SizedBox(
+          height: (mediaQuery.size.height -
+                  appBar.preferredSize.height -
+                  mediaQuery.padding.top) *
+              0.3,
+          child: Chart(_recentTransactions)),
+      txList
+    ];
+  }
+
+  Widget _buildAppBar() {
+    return Platform.isIOS
         ? CupertinoNavigationBar(
-            middle: Text(
+            middle: const Text(
               "Personal Expenses",
             ),
             trailing: Row(
@@ -109,7 +153,7 @@ class _MyHomePageState extends State<MyHomePage> {
               children: [
                 GestureDetector(
                   onTap: () => _startAddNewTransaction(context),
-                  child: Icon(CupertinoIcons.add),
+                  child: const Icon(CupertinoIcons.add),
                 )
               ],
             ),
@@ -124,16 +168,19 @@ class _MyHomePageState extends State<MyHomePage> {
                   icon: const Icon(Icons.add))
             ],
           );
+  }
 
+  @override
+  Widget build(BuildContext context) {
+    final PreferredSizeWidget appBar = _buildAppBar();
     final mediaQuery = MediaQuery.of(context);
-    final height = mediaQuery.size.height;
-    final appBarHeight = appBar.preferredSize.height;
-    final padding = mediaQuery.padding.top;
-
     final isLandscape = mediaQuery.orientation == Orientation.landscape;
 
-    final txListWidget = Container(
-        height: (height - appBarHeight - padding) * 0.7,
+    final txListWidget = SizedBox(
+        height: (mediaQuery.size.height -
+                appBar.preferredSize.height -
+                mediaQuery.padding.top) *
+            0.7,
         child: TransactionList(_userTransaction, _deleteTransactions));
 
     final pageBody = SafeArea(
@@ -141,35 +188,8 @@ class _MyHomePageState extends State<MyHomePage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          if (isLandscape)
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  'Show Chart',
-                  style: Theme.of(context).textTheme.headline6,
-                ),
-                Switch.adaptive(
-                    activeColor: Theme.of(context).accentColor,
-                    value: _switchState,
-                    onChanged: (value) {
-                      setState(() {
-                        _switchState = value;
-                      });
-                    })
-              ],
-            ),
-          if (!isLandscape)
-            SizedBox(
-                height: (height - appBarHeight - padding) * 0.3,
-                child: Chart(_recentTransactions)),
-          if (!isLandscape) txListWidget,
-          if (isLandscape)
-            _switchState
-                ? SizedBox(
-                    height: (height - appBarHeight - padding) * 0.7,
-                    child: Chart(_recentTransactions))
-                : txListWidget
+          if (isLandscape) ..._buildLandscape(mediaQuery, appBar, txListWidget),
+          if (!isLandscape) ..._buildPorttrait(mediaQuery, appBar, txListWidget)
         ],
       ),
     ));
