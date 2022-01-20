@@ -1,10 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../widgets/chart.dart';
 import 'package:personal_expense_app/widgets/new_transaction.dart';
 import './widgets/transaction_list.dart';
 import 'models/transaction.dart';
 
-void main() => runApp(MyApp());
+void main() {
+  // To set a limit to how the user uses the app in which orientation
+
+  // SystemChrome.setPreferredOrientations(
+  //     [DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
+
+  runApp(MyApp());
+}
 
 class MyApp extends StatelessWidget {
   @override
@@ -42,16 +50,9 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  final List<Transaction> _userTransaction = [
-    // Transaction(
-    //   id: 't1',
-    //   title: 'New Shoes',
-    //   amount: 69.99,
-    //   date: DateTime.now(),
-    // ),
-    // Transaction(
-    // id: 't2', title: 'Grocery', amount: 55.43, date: DateTime.now()),
-  ];
+  final List<Transaction> _userTransaction = [];
+
+  bool _switchState = false;
 
   List<Transaction> get _recentTransactions {
     return _userTransaction.where((tx) {
@@ -92,34 +93,68 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final appBar = AppBar(
+      title: const Text(
+        "Personal Expenses",
+        style: TextStyle(fontFamily: 'OpenSans'),
+      ),
+      actions: [
+        IconButton(
+            onPressed: () {
+              return _startAddNewTransaction(context);
+            },
+            icon: const Icon(Icons.add))
+      ],
+    );
+    final height = MediaQuery.of(context).size.height;
+    final appBarHeight = appBar.preferredSize.height;
+    final padding = MediaQuery.of(context).padding.top;
+
+    final isLandscape =
+        MediaQuery.of(context).orientation == Orientation.landscape;
+
+    final txListWidget = Container(
+        height: (height - appBarHeight - padding) * 0.7,
+        child: TransactionList(_userTransaction, _deleteTransactions));
+
     return Scaffold(
-        appBar: AppBar(
-          title: Text(
-            "Personal Expenses",
-            style: TextStyle(fontFamily: 'OpenSans'),
-          ),
-          actions: [
-            IconButton(
-                onPressed: () {
-                  return _startAddNewTransaction(context);
-                },
-                icon: Icon(Icons.add))
-          ],
-        ),
+        appBar: appBar,
         body: SingleChildScrollView(
           child: Column(
-            // mainAxisAlignment: MainAxisAlignment.start,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              Chart(_recentTransactions),
-              TransactionList(_userTransaction, _deleteTransactions)
+              if (isLandscape)
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text('Show Chart'),
+                    Switch(
+                        value: _switchState,
+                        onChanged: (value) {
+                          setState(() {
+                            _switchState = value;
+                          });
+                        })
+                  ],
+                ),
+              if (!isLandscape)
+                Container(
+                    height: (height - appBarHeight - padding) * 0.3,
+                    child: Chart(_recentTransactions)),
+              if (!isLandscape) txListWidget,
+              if (isLandscape)
+                _switchState
+                    ? Container(
+                        height: (height - appBarHeight - padding) * 0.7,
+                        child: Chart(_recentTransactions))
+                    : txListWidget
             ],
           ),
         ),
         floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
         floatingActionButton: FloatingActionButton(
           onPressed: () => _startAddNewTransaction(context),
-          child: Icon(Icons.add),
+          child: const Icon(Icons.add),
         ));
   }
 }
