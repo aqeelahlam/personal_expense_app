@@ -49,9 +49,6 @@ class MyApp extends StatelessWidget {
 }
 
 class MyHomePage extends StatefulWidget {
-  // String titleInput;
-  // String amountInput;
-
   @override
   State<MyHomePage> createState() => _MyHomePageState();
 }
@@ -99,7 +96,7 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   List<Widget> _buildLandscape(
-      MediaQueryData mediaQuery, AppBar appBar, Widget txList) {
+      MediaQueryData mediaQuery, PreferredSizeWidget appBar, Widget txList) {
     return [
       Row(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -130,7 +127,7 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   List<Widget> _buildPorttrait(
-      MediaQueryData mediaQuery, AppBar appBar, Widget txList) {
+      MediaQueryData mediaQuery, PreferredSizeWidget appBar, Widget txList) {
     return [
       SizedBox(
           height: (mediaQuery.size.height -
